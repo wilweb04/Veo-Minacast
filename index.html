@@ -1,22 +1,66 @@
-<script type="importmap">
-  {
-    "imports": {
-      "@google/genai": "https://esm.sh/@google/genai@^1.4.0"
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="index.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="stylesheet" href="/index.css">
+</head>
+<body>
+  <main>
+    <div class="header">
+      <h1>Minacast - Video generation</h1>
+      <button id="settings-button" aria-label="Settings" title="API Key Settings">⚙️</button>
+    </div>
+
+    <p>Enter a prompt to generate a video with Veo. You can optionally provide a conditioning image.</p>
+    
+    <div class="input-group">
+      <label for="prompt-input">Prompt</label>
+      <textarea id="prompt-input" type="text" placeholder="e.g., A majestic lion roaring on a rocky outcrop"></textarea>
+    </div>
+
+    <div class="input-group">
+      <label for="file-input">Conditioning Image (Optional)</label>
+      <input id="file-input" type="file" accept="image/*" />
+    </div>
+
+    <img alt="Condition image" id="img" />
+    <button id="generate-button">Generate</button>
+    
+    <div id="quota-error" class="error-panel">
+      <p><strong>Quota Exceeded</strong></p>
+      <p>To continue, please add your own Google Gemini API key in the settings.</p>
+      <p><button id="show-key-modal-button">Add Your API Key</button></p>
+    </div>
+
+    <video id="video" autoplay loop controls></video>
+    <p id="status">Ready.</p>
+  </main>
+
+  <div id="api-key-modal" class="modal" hidden>
+    <div class="modal-overlay" title="Close"></div>
+    <div class="modal-content" role="dialog" aria-labelledby="modal-title" aria-modal="true">
+      <h2 id="modal-title">API Key Settings</h2>
+      <p>You can get your own free API key from Google AI Studio.</p>
+      <div class="input-group">
+        <label for="api-key-input">Your Gemini API Key:</label>
+        <input type="password" id="api-key-input" placeholder="Enter your API key">
+      </div>
+      <div class="modal-actions">
+        <button id="save-key-button">Save and Close</button>
+        <button id="close-modal-button">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "@google/genai": "https://esm.sh/@google/genai@^1.4.0"
+      }
     }
-  }
-</script>
-<h1>Minacast - Video generation</h1>
-<p>Enter a prompt.</p>
-<p><textarea id="prompt-input" type="text" placeholder="Enter a prompt"></textarea></p>
-<p>Provide a conditioning image if the model supports it.</p>
-<p><input id="file-input" type="file" accept="image/*" /></p>
-<img alt="Condition image" id="img" />
-<button id="generate-button">Generate</button>
-<div id="quota-error">
-  <p>Minacast is available with limited free generations per day for testing.</p>
-  <p>You exceeded your current quota, to continue please use your paid API key.</p>
-  <p><button id="open-key">Click here to add your API key.</button></p>
-</div>
-<video id="video" autoplay loop controls></video>
-<p id="status">Ready.</p><link rel="stylesheet" href="/index.css">
+  </script>
+  <script type="module" src="index.js"></script>
 <script type="module" src="/index.tsx"></script>
+</body>
+</html>
