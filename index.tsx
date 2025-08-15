@@ -107,9 +107,10 @@ async function generateContent(prompt: string, imageBytes: string) {
 
 // --- DOM Elements ---
 const upload = document.querySelector('#file-input') as HTMLInputElement;
-const promptEl = document.querySelector('#prompt-input') as HTMLInputElement;
+const promptEl = document.querySelector('#prompt-input') as HTMLTextAreaElement;
 const statusEl = document.querySelector('#status') as HTMLParagraphElement;
 const video = document.querySelector('#video') as HTMLVideoElement;
+const imgEl = document.querySelector('#img') as HTMLImageElement;
 const quotaErrorEl = document.querySelector('#quota-error') as HTMLDivElement;
 const generateButton = document.querySelector('#generate-button') as HTMLButtonElement;
 const settingsButton = document.querySelector('#settings-button') as HTMLButtonElement;
@@ -142,6 +143,11 @@ function hideApiKeyModal() {
 upload.addEventListener('change', async (e) => {
   const file = (e.target as HTMLInputElement).files[0];
   if (file) {
+    // Create a URL for preview
+    const objectURL = URL.createObjectURL(file);
+    imgEl.src = objectURL;
+    imgEl.style.display = 'block';
+    // Get base64 data for the API
     base64data = await blobToBase64(file);
   }
 });
@@ -190,26 +196,17 @@ async function generate() {
     await generateContent(prompt, base64data);
     statusEl.innerText = 'Done. Video downloaded.';
   } catch (e) {
-    try {
-      // Attempt to parse a structured error from the API
-      const err = JSON.parse(e.message);
-      const code = err.error.code;
-      if (code === 429) {
-        // Out of quota
-        quotaErrorEl.style.display = 'block';
-        statusEl.innerText = 'Quota limit reached.';
-      } else if (code === 400) {
-        // Often an invalid key or bad request
-        statusEl.innerText =
-          'Request failed. Please check your API key and prompt.';
-        showApiKeyModal();
-      } else {
-        statusEl.innerText = err.error.message;
-      }
-    } catch (err) {
-      // Fallback for other errors (e.g., "API key not found")
-      statusEl.innerText = e.message;
-      console.error('An error occurred:', e.message);
+    const message = e.message || 'An unknown error occurred.';
+    console.error('An error occurred:', e);
+
+    if (message.includes('429') || message.toLowerCase().includes('quota')) {
+      quotaErrorEl.style.display = 'block';
+      statusEl.innerText = 'Quota limit reached. Please try again later or add your own API key.';
+    } else if (message.includes('400') || message.toLowerCase().includes('api key')) {
+      statusEl.innerText = 'Request failed. Please check your API key and prompt, then try again.';
+      showApiKeyModal();
+    } else {
+      statusEl.innerText = message;
     }
   }
 

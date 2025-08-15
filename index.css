@@ -107,6 +107,11 @@ img, video {
   background-color: #eee;
 }
 
+#img {
+  margin-bottom: 1rem;
+  background-color: transparent;
+}
+
 #status {
   margin-top: 1rem;
   padding: 0.75rem;
@@ -178,6 +183,15 @@ img, video {
 
 .modal-content h2 {
   margin-top: 0;
+}
+
+.modal-content a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.modal-content a:hover {
+  text-decoration: underline;
 }
 
 #api-key-input {
