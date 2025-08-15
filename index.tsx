@@ -82,16 +82,27 @@ async function generateContent(prompt: string, imageBytes: string) {
     throw new Error('No videos generated');
   }
 
-  videos.forEach(async (v, i) => {
+  // Use a for...of loop to correctly handle async/await and errors.
+  let i = 0;
+  for (const v of videos) {
     const url = decodeURIComponent(v.video.uri);
-    const res = await fetch(url);
+    // The API key must be appended to the download URL.
+    const res = await fetch(`${url}&key=${apiKey}`);
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error('Video download failed:', errorText);
+      throw new Error(
+        `Failed to download video: ${res.status} ${res.statusText}`,
+      );
+    }
     const blob = await res.blob();
     const objectURL = URL.createObjectURL(blob);
     downloadFile(objectURL, `video${i}.mp4`);
     video.src = objectURL;
     console.log('Downloaded video', `video${i}.mp4`);
     video.style.display = 'block';
-  });
+    i++;
+  }
 }
 
 // --- DOM Elements ---
@@ -189,7 +200,8 @@ async function generate() {
         statusEl.innerText = 'Quota limit reached.';
       } else if (code === 400) {
         // Often an invalid key or bad request
-        statusEl.innerText = 'Request failed. Please check your API key and prompt.';
+        statusEl.innerText =
+          'Request failed. Please check your API key and prompt.';
         showApiKeyModal();
       } else {
         statusEl.innerText = err.error.message;
