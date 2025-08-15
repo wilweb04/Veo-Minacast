@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <title>Minacast - Video Generation Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="index.css" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <link rel="stylesheet" href="/index.css">
@@ -8,33 +12,52 @@
 <body>
   <main>
     <div class="header">
-      <h1>Minacast - Video generation</h1>
-      <button id="settings-button" aria-label="Settings" title="API Key Settings">⚙️</button>
+      <div class="title-container">
+        <h1>Minacast</h1>
+        <p class="subtitle">Video Generation Studio</p>
+      </div>
+      <button id="settings-button" aria-label="Settings" title="API Key Settings">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      </button>
     </div>
 
-    <p>Enter a prompt to generate a video with Veo. You can optionally provide a conditioning image.</p>
+    <p class="description">Enter a prompt to generate a video with Veo. You can optionally provide a conditioning image.</p>
     
     <div class="input-group">
       <label for="prompt-input">Prompt</label>
-      <textarea id="prompt-input" type="text" placeholder="e.g., A majestic lion roaring on a rocky outcrop"></textarea>
+      <textarea id="prompt-input" type="text" placeholder="e.g., A majestic lion roaring on a rocky outcrop at sunset"></textarea>
     </div>
 
     <div class="input-group">
       <label for="file-input">Conditioning Image (Optional)</label>
-      <input id="file-input" type="file" accept="image/*" />
+      <div id="drop-zone" class="drop-zone">
+        <div class="drop-zone-prompt">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          <p>Drag & drop an image here, or click to select</p>
+        </div>
+        <input id="file-input" type="file" accept="image/*" />
+        <img alt="Conditioning image preview" id="img" />
+      </div>
     </div>
 
-    <img alt="Conditioning image preview" id="img" />
-    <button id="generate-button">Generate</button>
+    <button id="generate-button">
+      <span class="button-text">Generate</span>
+      <div class="spinner" hidden></div>
+    </button>
+    
+    <div id="output-container">
+      <video id="video" autoplay loop controls></video>
+      <div id="status-container">
+          <p id="status">Ready.</p>
+      </div>
+    </div>
     
     <div id="quota-error" class="error-panel">
       <p><strong>Quota Exceeded</strong></p>
-      <p>To continue, please add your own Google Gemini API key in the settings.</p>
+      <p>To continue generating, please add your own Google Gemini API key in the settings.</p>
       <p><button id="show-key-modal-button">Add Your API Key</button></p>
     </div>
 
-    <video id="video" autoplay loop controls></video>
-    <p id="status">Ready.</p>
   </main>
 
   <div id="api-key-modal" class="modal" hidden>
@@ -47,8 +70,8 @@
         <input type="password" id="api-key-input" placeholder="Enter your API key">
       </div>
       <div class="modal-actions">
-        <button id="save-key-button">Save and Close</button>
         <button id="close-modal-button">Cancel</button>
+        <button id="save-key-button">Save and Close</button>
       </div>
     </div>
   </div>

@@ -7,6 +7,15 @@
 import {GenerateVideosParameters, GoogleGenAI} from '@google/genai';
 
 const API_KEY_STORAGE_KEY = 'gemini_api_key';
+const GENERATION_MESSAGES = [
+  'Warming up the video engine...',
+  'Storyboarding your prompt...',
+  'Consulting with the digital muses...',
+  'Rendering the first few frames...',
+  'This is taking a moment, hang tight...',
+  'Adding a touch of cinematic magic...',
+  'Almost there, polishing the final cut...',
+];
 
 // --- Helper Functions ---
 async function delay(ms: number): Promise<void> {
@@ -44,7 +53,7 @@ function saveApiKey(key: string) {
 }
 
 // --- Video Generation ---
-async function generateContent(prompt: string, imageBytes: string) {
+async function generateContent(prompt: string, imageBytes: string, onStatusUpdate: (message: string) => void) {
   const apiKey = getApiKey();
   if (!apiKey) {
     statusEl.innerText = 'Please add your Gemini API key in the settings.';
@@ -70,49 +79,62 @@ async function generateContent(prompt: string, imageBytes: string) {
   }
 
   let operation = await ai.models.generateVideos(config);
+  
+  let messageIndex = 0;
+  const messageInterval = setInterval(() => {
+    onStatusUpdate(GENERATION_MESSAGES[messageIndex % GENERATION_MESSAGES.length]);
+    messageIndex++;
+  }, 4000);
 
-  while (!operation.done) {
-    console.log('Waiting for completion');
-    await delay(1000);
-    operation = await ai.operations.getVideosOperation({operation});
-  }
-
-  const videos = operation.response?.generatedVideos;
-  if (videos === undefined || videos.length === 0) {
-    throw new Error('No videos generated');
-  }
-
-  // Use a for...of loop to correctly handle async/await and errors.
-  let i = 0;
-  for (const v of videos) {
-    const url = decodeURIComponent(v.video.uri);
-    // The API key must be appended to the download URL.
-    const res = await fetch(`${url}&key=${apiKey}`);
-    if (!res.ok) {
-      const errorText = await res.text();
-      console.error('Video download failed:', errorText);
-      throw new Error(
-        `Failed to download video: ${res.status} ${res.statusText}`,
-      );
+  try {
+    while (!operation.done) {
+      console.log('Waiting for completion');
+      await delay(1000);
+      operation = await ai.operations.getVideosOperation({operation});
     }
-    const blob = await res.blob();
-    const objectURL = URL.createObjectURL(blob);
-    downloadFile(objectURL, `video${i}.mp4`);
-    video.src = objectURL;
-    console.log('Downloaded video', `video${i}.mp4`);
-    video.style.display = 'block';
-    i++;
+
+    const videos = operation.response?.generatedVideos;
+    if (videos === undefined || videos.length === 0) {
+      throw new Error('No videos generated');
+    }
+
+    // Use a for...of loop to correctly handle async/await and errors.
+    let i = 0;
+    for (const v of videos) {
+      const url = decodeURIComponent(v.video.uri);
+      // The API key must be appended to the download URL.
+      const res = await fetch(`${url}&key=${apiKey}`);
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Video download failed:', errorText);
+        throw new Error(
+          `Failed to download video: ${res.status} ${res.statusText}`,
+        );
+      }
+      const blob = await res.blob();
+      const objectURL = URL.createObjectURL(blob);
+      downloadFile(objectURL, `video${i}.mp4`);
+      video.src = objectURL;
+      console.log('Downloaded video', `video${i}.mp4`);
+      video.style.display = 'block';
+      i++;
+    }
+  } finally {
+    clearInterval(messageInterval);
   }
 }
 
 // --- DOM Elements ---
 const upload = document.querySelector('#file-input') as HTMLInputElement;
+const dropZone = document.querySelector('#drop-zone') as HTMLDivElement;
 const promptEl = document.querySelector('#prompt-input') as HTMLTextAreaElement;
 const statusEl = document.querySelector('#status') as HTMLParagraphElement;
 const video = document.querySelector('#video') as HTMLVideoElement;
 const imgEl = document.querySelector('#img') as HTMLImageElement;
 const quotaErrorEl = document.querySelector('#quota-error') as HTMLDivElement;
 const generateButton = document.querySelector('#generate-button') as HTMLButtonElement;
+const buttonText = generateButton.querySelector('.button-text') as HTMLSpanElement;
+const spinner = generateButton.querySelector('.spinner') as HTMLDivElement;
 const settingsButton = document.querySelector('#settings-button') as HTMLButtonElement;
 const apiKeyModal = document.querySelector('#api-key-modal') as HTMLDivElement;
 const modalOverlay = document.querySelector('.modal-overlay') as HTMLDivElement;
@@ -139,19 +161,41 @@ function hideApiKeyModal() {
   apiKeyModal.hidden = true;
 }
 
-// --- Event Listeners ---
-upload.addEventListener('change', async (e) => {
-  const file = (e.target as HTMLInputElement).files[0];
-  if (file) {
-    // Create a URL for preview
+// --- Drag and Drop Logic ---
+function handleFile(file: File) {
+  if (file && file.type.startsWith('image/')) {
+    dropZone.classList.add('has-file');
     const objectURL = URL.createObjectURL(file);
     imgEl.src = objectURL;
-    imgEl.style.display = 'block';
-    // Get base64 data for the API
-    base64data = await blobToBase64(file);
+    blobToBase64(file).then(data => {
+      base64data = data;
+    });
+  }
+}
+
+dropZone.addEventListener('click', () => upload.click());
+dropZone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  dropZone.classList.add('dragover');
+});
+dropZone.addEventListener('dragleave', () => {
+  dropZone.classList.remove('dragover');
+});
+dropZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  if (e.dataTransfer.files.length > 0) {
+    handleFile(e.dataTransfer.files[0]);
+  }
+});
+upload.addEventListener('change', (e) => {
+  const file = (e.target as HTMLInputElement).files?.[0];
+  if (file) {
+    handleFile(file);
   }
 });
 
+// --- Event Listeners ---
 promptEl.addEventListener('input', () => {
   prompt = promptEl.value;
 });
@@ -184,16 +228,20 @@ async function generate() {
     statusEl.innerText = 'Please enter a prompt.';
     return;
   }
-  statusEl.innerText = 'Generating... This may take a few minutes.';
+  statusEl.innerText = 'Initializing...';
   video.style.display = 'none';
 
   generateButton.disabled = true;
+  buttonText.innerText = "Generating...";
+  spinner.hidden = false;
   upload.disabled = true;
   promptEl.disabled = true;
   quotaErrorEl.style.display = 'none';
 
   try {
-    await generateContent(prompt, base64data);
+    await generateContent(prompt, base64data, (message) => {
+        statusEl.innerText = message;
+    });
     statusEl.innerText = 'Done. Video downloaded.';
   } catch (e) {
     const message = e.message || 'An unknown error occurred.';
@@ -211,6 +259,8 @@ async function generate() {
   }
 
   generateButton.disabled = false;
+  buttonText.innerText = "Generate";
+  spinner.hidden = true;
   upload.disabled = false;
   promptEl.disabled = false;
 }
