@@ -1,0 +1,22 @@
+<script type="importmap">
+  {
+    "imports": {
+      "@google/genai": "https://esm.sh/@google/genai@^1.4.0"
+    }
+  }
+</script>
+<h1>Minacast - Video generation</h1>
+<p>Enter a prompt.</p>
+<p><textarea id="prompt-input" type="text" placeholder="Enter a prompt"></textarea></p>
+<p>Provide a conditioning image if the model supports it.</p>
+<p><input id="file-input" type="file" accept="image/*" /></p>
+<img alt="Condition image" id="img" />
+<button id="generate-button">Generate</button>
+<div id="quota-error">
+  <p>Minacast is available with limited free generations per day for testing.</p>
+  <p>You exceeded your current quota, to continue please use your paid API key.</p>
+  <p><button id="open-key">Click here to add your API key.</button></p>
+</div>
+<video id="video" autoplay loop controls></video>
+<p id="status">Ready.</p><link rel="stylesheet" href="/index.css">
+<script type="module" src="/index.tsx"></script>

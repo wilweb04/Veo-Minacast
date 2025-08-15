@@ -1,0 +1,28 @@
+body {
+  padding: 10px;
+}
+
+input, button {
+  font: inherit;
+}
+
+img {
+  display: none;
+  width: 100%;
+}
+
+video {
+  display: none;
+  width: 100%;
+}
+
+textarea {
+  width: 100%;
+  padding: 10px;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+#quota-error {
+  display: none;
+}
